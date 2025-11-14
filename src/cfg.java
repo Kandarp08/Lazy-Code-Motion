@@ -2,10 +2,6 @@ import java.util.ArrayList;
 
 interface CFGNode
 {
-    public int getId();
-    public int getColor();
-    public String printNodes();
-    public String printEdges();
     public void addEntry(CFGNode entry);
     public void addExit(CFGNode exit);
     public ArrayList<CFGNode> getEntries();
@@ -27,7 +23,6 @@ class Pair
 class InstructionNode implements CFGNode
 {
     public int id;
-    public int color;
     public ArrayList<CFGNode> entries;
     public ArrayList<CFGNode> exits;
     public Stmt stmt;
@@ -35,7 +30,6 @@ class InstructionNode implements CFGNode
     public InstructionNode(int id, Stmt stmt)
     {
         this.id = id;
-        this.color = 0;
         this.stmt = stmt;
         this.entries = new ArrayList<CFGNode>();
         this.exits = new ArrayList<CFGNode>();
@@ -44,11 +38,6 @@ class InstructionNode implements CFGNode
     public int getId()
     {
         return id;
-    }
-
-    public int getColor()
-    {
-        return color;
     }
 
     public CFGNode getEntry()
@@ -79,53 +68,6 @@ class InstructionNode implements CFGNode
     public void addExit(CFGNode exit)
     {
         exits.add(exit);
-    }
-
-    public String printNodes()
-    {
-        String str = "Block " + id + "\n{\n";
-        str += stmt.print(0);
-        str += "\n}\n\n";
-
-        this.color = 1;
-
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 0)
-                str += cfgNode.printNodes();    
-        }
-
-        this.color = 2;
-
-        return str;
-    }
-
-    public String printEdges()
-    {
-        String str = "";
-        this.color = 3;
-
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 3)
-            {
-                str += this.id + " --LOOP--> " + cfgNode.getId() + "\n";
-                continue;
-            }
-
-            else if (cfgNode.getColor() == 4)
-            {
-                str += this.id + " -> " + cfgNode.getId() + "\n";
-                continue;
-            }
-
-            str += this.id + " -> " + cfgNode.getId() + "\n";
-            str += cfgNode.printEdges();
-        }
-
-        this.color = 4;
-
-        return str;
     }
 }
 
@@ -137,7 +79,6 @@ abstract class DecisionNode implements CFGNode
 class IfNode extends DecisionNode
 {
     public int id;
-    public int color;
     public ArrayList<CFGNode> entries;
     public ArrayList<CFGNode> exits;
     public If1 if1;
@@ -145,7 +86,6 @@ class IfNode extends DecisionNode
     public IfNode(int id, If1 if1)
     {
         this.id = id;
-        this.color = 0;
         this.if1 = if1;
         this.entries = new ArrayList<CFGNode>();
         this.exits = new ArrayList<CFGNode>();
@@ -156,11 +96,6 @@ class IfNode extends DecisionNode
         return id;
     }
 
-    public int getColor()
-    {
-        return color;
-    }
-
     public CFGNode getEntry()
     {
         return entries.get(0);
@@ -190,68 +125,11 @@ class IfNode extends DecisionNode
     {
         exits.add(exit);
     }
-
-    public String printNodes()
-    {
-        String str = "Block " + id + "\n{\n";
-        str += "If Condition\n\n";
-        str += if1.condition.print(0);
-        str += "\n}\n\n";
-
-        this.color = 1;
-
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 0)
-                str += cfgNode.printNodes();
-        }
-
-        this.color = 2;
-
-        return str;
-    }
-
-    public String printEdges()
-    {
-        String str = "";
-        int i = 1;
-
-        this.color = 3;
-
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 3)
-            {
-                str += this.id + " --LOOP--> " + cfgNode.getId() + "\n";
-                continue;
-            }
-            
-            else if (cfgNode.getColor() == 4)
-            {
-                str += this.id + " -> " + cfgNode.getId() + "\n";
-                continue;
-            }
-
-            if (i == 1)
-                str += this.id + " --TRUE--> " + cfgNode.getId() + "\n";
-
-            else
-                str += this.id + " --FALSE--> " + cfgNode.getId() + "\n";
-            
-            str += cfgNode.printEdges();
-            ++i;
-        }
-
-        this.color = 4;
-
-        return str;
-    }
 }
 
 class LoopNode extends DecisionNode
 {
     public int id;
-    public int color;
     public ArrayList<CFGNode> entries;
     public ArrayList<CFGNode> exits;
     public Loop loop;
@@ -259,7 +137,6 @@ class LoopNode extends DecisionNode
     public LoopNode(int id, Loop loop)
     {
         this.id = id;
-        this.color = 0;
         this.loop = loop;
         this.entries = new ArrayList<CFGNode>();
         this.exits = new ArrayList<CFGNode>();
@@ -269,11 +146,6 @@ class LoopNode extends DecisionNode
     {
         return id;
     }
-    
-    public int getColor()
-    {
-        return color;
-    }
 
     public CFGNode getEntry()
     {
@@ -304,75 +176,17 @@ class LoopNode extends DecisionNode
     {
         exits.add(exit);
     }
-
-    public String printNodes()
-    {
-        String str = "Block " + id + "\n{\n";
-        str += "Loop Condition\n\n";
-        str += loop.condition.print(0);
-        str += "\n}\n\n";
-
-        this.color = 1;
-
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 0)
-                str += cfgNode.printNodes();
-        }
-
-        this.color = 2;
-
-        return str;
-    }
-
-    public String printEdges()
-    {
-        String str = "";
-        int i = 1;
-
-        this.color = 3;
-
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 3)
-            {
-                str += this.id + " --LOOP--> " + cfgNode.getId() + "\n";
-                continue;
-            }
-
-            else if (cfgNode.getColor() == 4)
-            {
-                str += this.id + " -> " + cfgNode.getId() + "\n";
-                continue;
-            }
-
-            if (i == 1)
-                str += this.id + " --TRUE--> " + cfgNode.getId() + "\n";
-
-            else
-                str += this.id + " --FALSE--> " + cfgNode.getId() + "\n";
-            
-            str += cfgNode.printEdges();
-            ++i;
-        }
-
-        this.color = 4;
-
-        return str;
-    }
 }
 
 class DummyNode implements CFGNode
 {
     public int id;
-    public int color;
     public ArrayList<CFGNode> entries;
     public ArrayList<CFGNode> exits;
     
     public DummyNode(int id)
     {
         this.id = id;
-        this.color = 0;
         this.entries = new ArrayList<CFGNode>();
         this.exits = new ArrayList<CFGNode>();
     }
@@ -381,11 +195,6 @@ class DummyNode implements CFGNode
     {
         return id;
     }
-    
-    public int getColor()
-    {
-        return color;
-    }
 
     public CFGNode getEntry()
     {
@@ -415,53 +224,6 @@ class DummyNode implements CFGNode
     public void addExit(CFGNode exit)
     {
         exits.add(exit);
-    }
-
-    public String printNodes()
-    {
-        String str = "Block " + id + "\n{\n";
-        str += "Dummy Node";
-        str += "\n}\n\n";
-
-        this.color = 1;
-        
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 0)
-                str += cfgNode.printNodes();
-        }
-
-        this.color = 2;
-
-        return str;
-    }
-
-    public String printEdges()
-    {
-        String str = "";
-        this.color = 3;
-
-        for (CFGNode cfgNode : exits)
-        {
-            if (cfgNode.getColor() == 3)
-            {
-                str += this.id + " --LOOP--> " + cfgNode.getId() + "\n";
-                continue;
-            }
-
-            else if (cfgNode.getColor() == 4)
-            {
-                str += this.id + " -> " + cfgNode.getId() + "\n";
-                continue;
-            }
-
-            str += this.id + " -> " + cfgNode.getId() + "\n";
-            str += cfgNode.printEdges();
-        }
-
-        this.color = 4;
-
-        return str;
     }
 }
 
