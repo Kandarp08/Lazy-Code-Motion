@@ -734,6 +734,9 @@ class LCM
             System.out.println("ANTin[" + nodeId + "] = " + ANTin[nodeId]);
             System.out.println("ANTout[" + nodeId + "] = " + ANTout[nodeId]);
         }
+
+        System.out.println("Pass1 finished");
+        pass2();
     }
     public void create_use_kill_sets()
     {
@@ -766,6 +769,38 @@ class LCM
                     }
                 }
             }
+            else if(node instanceof IfNode)
+            {
+                If1 if1 = ((IfNode)node).if1;
+                ArrayList<String> varsUsed = new ArrayList<String>();
+                if1.condition.getVariablesUsed(varsUsed);
+                for(String var : varsUsed)
+                {
+                    use[nodeId].add(var);
+                }
+                // String varUsed = if1.condition.toMathsString();
+                // use[nodeId].add(varUsed);
+            }
+            else if(node instanceof LoopNode)
+            {
+                Loop loop = ((LoopNode)node).loop;
+                ArrayList<String> varsUsed = new ArrayList<String>();
+                loop.condition.getVariablesUsed(varsUsed);
+                for(String var : varsUsed)
+                {
+                    use[nodeId].add(var);
+                }
+                // String varUsed = loop.condition.toMathsString();
+                // use[nodeId].add(varUsed);
+            }
+            else if(node instanceof DummyNode)
+            {
+                //do nothing.
+            }
+            else
+            {
+                System.out.println("Error: Unknown CFG Node type.");
+            }
         }
     }
     public void findTopoSort(CFGNode node, boolean visited[])
@@ -790,8 +825,15 @@ class LCM
 
         //Initialization of the sets.
         //AVout - empty
-        //AVin - universal set
+        //AVin - universal set (or) empty?
         //earliest - empty
+        for(int i=0;i<totalNodes;i++)
+        {
+            AVout[i] = new HashSet<String>();                   //initialized to empty set.
+            AVin[i] = new HashSet<String>(UniversalSet);       //initialized to universal set.
+            // AVin[i] = new HashSet<String>();                    //initialized to empty set.
+            earliest[i] = new HashSet<String>();                //initialized to empty set.
+        }
         
         boolean convergence = false;
         while(!convergence)
@@ -805,8 +847,21 @@ class LCM
                 HashSet<String> oldANTout = (HashSet<String>)ANTout[nodeId].clone();
 
                 //AVout[n] = (ANTin[n] Union AVIn[n]) - kill[n];
+                AVout[nodeId] = new HashSet<String>(ANTin[nodeId]);
+                AVout[nodeId].addAll(AVin[nodeId]);
+                AVout[nodeId].removeAll(kill[nodeId]);
+
                 //AVin[n] = intersection of AVout[p] for all predecessors p of n.
+                AVin[nodeId] = new HashSet<String>(UniversalSet);
+                ArrayList<CFGNode> entries = nodes[nodeId].getEntries();
+                for(CFGNode pred : entries)
+                {
+                    AVin[nodeId].retainAll(AVout[pred.getId()]);
+                }
+
                 //earliest[n] = ANTin[n] - AVIn[n].
+                earliest[nodeId] = new HashSet<String>(ANTin[nodeId]);
+                earliest[nodeId].removeAll(AVin[nodeId]);
 
                 //check for convergence
                 if(!oldANTin.equals(ANTin[nodeId]) || !oldANTout.equals(ANTout[nodeId]))
@@ -833,5 +888,59 @@ class LCM
                 convergence = true;
             }
         }
+
+        System.out.println("\nFinal AVin, AVout and earliest sets:");
+        for(int i=0;i<ToposortialOrder.size();i++)
+        {
+            int nodeId = i;
+            System.out.println("Node " + nodeId + ":");
+            System.out.println("AVin[" + nodeId + "] = " + AVin[nodeId]);
+            System.out.println("AVout[" + nodeId + "] = " + AVout[nodeId]);
+            System.out.println("earliest[" + nodeId + "] = " + earliest[nodeId]);
+        }
+
+        utility_print();
+    }
+
+    public void utility_print()
+    {
+        int n = use.length;
+
+    // Max width for each cell
+    final int WIDTH = 25;
+
+    System.out.println("===============================================================================================================================");
+    System.out.printf("%-8s | %-25s | %-25s | %-25s | %-25s | %-25s | %-25s | %-25s%n",
+            "BlockID", "use", "kill", "ANTin", "ANTout", "AVin", "AVout", "earliest");
+    System.out.println("===============================================================================================================================");
+
+    for (int i = 0; i < n; i++) {
+        System.out.printf(
+                "%-8d | %-25s | %-25s | %-25s | %-25s | %-25s | %-25s | %-25s%n",
+                i,
+                fit(use[i], WIDTH),
+                fit(kill[i], WIDTH),
+                fit(ANTin[i], WIDTH),
+                fit(ANTout[i], WIDTH),
+                fit(AVin[i], WIDTH),
+                fit(AVout[i], WIDTH),
+                fit(earliest[i], WIDTH)
+        );
+    }
+
+        System.out.println("========================================================================================================================");
+
+        }
+    private static String fit(HashSet<String> set, int maxWidth) {
+        if (set == null)
+            return "null";
+
+        String s = set.toString();
+
+        if (s.length() <= maxWidth)
+            return s;
+
+        // truncate and append "..."
+        return s.substring(0, maxWidth - 3) + "...";
     }
 }
