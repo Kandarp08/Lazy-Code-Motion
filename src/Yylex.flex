@@ -25,13 +25,13 @@ NUM   = {DIGIT}+
 "end"                      { return Parser.END; }
 "if"                       { return Parser.IF; }
 "else"                     { return Parser.ELSE; }
+"endif"                    { return Parser.ENDIF; }
 "while"                    { return Parser.WHILE; }
+"do"                       { return Parser.DO; }
+"done"                     { return Parser.DONE; }
+"then"                     { return Parser.THEN; }
 "function"                 { return Parser.FUNCTION; }
 "return"                   { return Parser.RETURN; }
-"int"                      { return Parser.INT; }
-"bool"                     { return Parser.BOOL; }
-"true"                     { return Parser.TRUE; }
-"false"                    { return Parser.FALSE; }
 
 {NUM}                      { yyparser.yylval = new ParserVal(Integer.parseInt(yytext()));  return Parser.NUM; }
 {ID}                       { yyparser.yylval = new ParserVal(yytext());                    return Parser.ID; }
@@ -45,8 +45,6 @@ NUM   = {DIGIT}+
 ";"            { return ';'; }
 "("            { return '('; }
 ")"            { return ')'; }
-"{"            { return '{'; }
-"}"            { return '}'; }
 ","            { return ','; }
 "+"            { return '+'; }
 "-"            { return '-'; }

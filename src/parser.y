@@ -1,15 +1,15 @@
 %{
-import java.util.ArrayList;
 import java.io.*;
+import java.util.*;
 %}
 
 %token <ival> NUM
-%token <sval> ID TRUE FALSE
+%token <sval> ID
 
-%token IF ELSE WHILE BEGIN END FUNCTION RETURN INT BOOL
+%token IF ELSE ENDIF DO DONE WHILE THEN BEGIN END FUNCTION RETURN
 %token LE GE ASSIGN      /* <=, >=, := */
 
-%type <obj> seq stmt assignment if1 loop expr binexpr funcdef params funccall args decl block funcdefs scope
+%type <obj> seq stmt assignment if1 loop expr binexpr funcdef params funccall args
 %type <sval> LE GE ASSIGN '<' '>' '=' '+' '-' '*' '/' '%'
 
 /* Operator precedences (low to high) */
@@ -20,116 +20,45 @@ import java.io.*;
 %%
 
 program: BEGIN
-         funcdefs
-         scope
-         END
-{ 
-    this.mainScope = (Scope)$3;
-    this.funcDefs = (FuncDefs)$2;
-}
+         seq
+         END  
+{ program = (Seq)$2; }
 
-scope:
-      '{'
-      block
-      seq
-      '}'
-{
-  Block block = (Block)$2;
-  Seq seq = (Seq)$3;
-
-  $$ = new Scope(block, seq);
-}
-
-block:
-      /* empty */
-      { $$ = new Block(); }
-    
-    | decl ';'
-      block
-      {
-        Block block = (Block)$3;
-        block.addDecl((Declaration)$1);
-
-        $$ = block;
-      }
-
-decl:
-      INT ID
-      { 
-        Id id = new Id($2);
-        $$ = new Declaration("int", id);
-      }
-
-    | BOOL ID
-      { 
-        Id id = new Id($2);
-        $$ = new Declaration("bool", id);
-      }
-
-funcdefs:
-          /* empty */
-          { $$ = new FuncDefs(); }
-        
-        | funcdef funcdefs
-          {
-            FuncDefs funcDefs = (FuncDefs)$2;
-            FuncDef funcDef = (FuncDef)$1;
-
-            funcDefs.addFuncDef(funcDef);
-
-            $$ = funcDefs;
-          }
-  
 seq:
       /* empty */
-      { 
-        $$ = new Seq();
-      }
+      { $$ = new Seq(new ArrayList<Stmt>()); }
 
     | stmt seq
       {
-        Seq seq = (Seq)$2;
-        Stmt stmt = (Stmt)$1;
-
-        seq.addStmt(stmt);
-
-        $$ = seq;
+        ArrayList<Stmt> stmts = ((Seq)$2).statements;
+        stmts.add(0, (Stmt)$1);
+    
+        $$ = new Seq(stmts);
       }
 
 stmt:
-      assignment
-    | if1
-    | loop
-    | scope
+      assignment ';'
+    | if1 ';'
+    | loop ';'
+    | funcdef
 
-assignment: ID ASSIGN expr ';'
+assignment: ID ASSIGN expr  
 { 
-  Id id = new Id($1);
-  Expression expr = (Expression)$3;
-
-  $$ = new Assignment(id, expr);
+    Id id = new Id($1);
+    $$ = new Assignment(id, (Expression)$3);
 }
 
-if1: IF '(' expr ')'
-     scope
-     ELSE
-     scope
-{ 
-  Expression condition = (Expression)$3;
-  Scope ifStmt = (Scope)$5;
-  Scope elseStmt = (Scope)$7;
+if1: IF '(' expr ')' THEN seq
+     ELSE seq
+     ENDIF
 
-  $$ = new If1(condition, ifStmt, elseStmt);
-}
+{ $$ = new If1((Expression)$3, (Stmt)$6, (Stmt)$8); }
 
-loop: WHILE '(' expr ')'
-      scope
-{ 
-  Expression condition = (Expression)$3;
-  Scope loopBody = (Scope)$5;
+loop: WHILE '(' expr ')' DO
+      seq
+      DONE
 
-  $$ = new Loop(condition, loopBody);
-}
+{ $$ = new Loop((Expression)$3, (Stmt)$6); }
 
 expr:
       NUM   
@@ -138,186 +67,158 @@ expr:
     | ID        
       { $$ = new Id($1); }
 
-    | TRUE
-      { $$ = new Bool(true); }
-
-    | FALSE
-      { $$ = new Bool(false); }
-    
-    | '(' expr ')'   
-      { $$ = (Expression)$2; }
-
     | binexpr
     | funccall
 
 binexpr:
       expr '+' expr               
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("+");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr '-' expr               
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("-");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr '*' expr               
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("*");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr '/' expr                      
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("/");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr '%' expr               
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("%");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr LE expr                
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("<=");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr GE expr                
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator(">=");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr '<' expr               
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("<");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
 
     | expr '>' expr               
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator(">");
-
-        $$ = new BinaryExpression(expr1, expr2, op);
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
       }
     
     | expr '=' expr               
       {
-        Expression expr1 = (Expression)$1;
-        Expression expr2 = (Expression)$3;
         Operator op = new Operator("=");
+        $$ = new BinaryExpression((Expression)$1, (Expression)$3, op);
+      }
 
-        $$ = new BinaryExpression(expr1, expr2, op);
-      }            
+    | '(' expr ')'   
+      { $$ = $2; }            
 
 funcdef: FUNCTION ID '(' params ')'
-         '{'
-            block
+         BEGIN
             seq
             RETURN expr ';'
-         '}'
+         END
 {
-  Id id = new Id($2);
-  Params params = new Params((ArrayList<Declaration>)$4);
-  Block block = (Block)$7;
-  Seq seq = (Seq)$8;
-  Expression expr = (Expression)$10;
-
-  $$ = new FuncDef(id, params, block, seq, expr);
+    Id id = new Id($2);
+    $$ = new FuncDef(id, new Params((ArrayList)$4), (Stmt)$7, (Expression)$9);
 }
 
 params: 
       /* empty */
-      { $$ = new ArrayList<Declaration>(); }
+      { $$ = new ArrayList<Id>(); }
     
-    | decl
+    | ID
       {  
-        ArrayList<Declaration> arr = new ArrayList<Declaration>();
-        Declaration decl = (Declaration)$1;
+        Id id = new Id($1);
 
-        arr.add(0, decl);
+        ArrayList<Id> p = new ArrayList<Id>();
+        p.add(id);
 
-        $$ = arr; 
+        $$ = p;
       }
 
-    | decl ',' params
+    | ID ',' params
       {
-        ArrayList<Declaration> arr = (ArrayList<Declaration>)$3;
-        Declaration decl = (Declaration)$1;
+        Id id = new Id($1);
+        ArrayList<Id> p = (ArrayList)$3;
+        p.add(0, id);
 
-        arr.add(0, decl);
-
-        $$ = arr;
+        $$ = p;
       }
 
 funccall: ID '(' args ')'
 {
-  Id id = new Id($1);
-  Args args = new Args((ArrayList<Expression>)$3);
-
-  $$ = new FuncCall(id, args);
+    Id id = new Id($1);
+    $$ = new FuncCall(id, new Args((ArrayList)$3));
 }
 
 args:
       /* empty */
       { $$ = new ArrayList<Expression>(); }
 
-    | expr
+    | ID
       {  
-        ArrayList<Expression> arr = new ArrayList<Expression>();
-        Expression expr = (Expression)$1;
+        Id id = new Id($1);
 
-        arr.add(0, expr);
+        ArrayList<Id> p = new ArrayList<Id>();
+        p.add(id);
 
-        $$ = arr;
+        $$ = p;
       }
 
-    | expr ',' args
+    | ID ',' args
       {
-        ArrayList<Expression> arr = (ArrayList<Expression>)$3;
-        Expression expr = (Expression)$1;
+        Id id = new Id($1);
+        ArrayList<Expression> p = (ArrayList)$3;
+        p.add(0, id);
 
-        arr.add(0, expr);
+        $$ = p;
+      }
 
-        $$ = arr;
+    | NUM
+      {  
+        Num num = new Num($1);
+
+        ArrayList<Expression> p = new ArrayList<Expression>();
+        p.add(num);
+
+        $$ = p;
+      }
+
+    | NUM ',' args
+      {
+        Num num = new Num($1);
+        ArrayList<Expression> p = (ArrayList)$3;
+        p.add(0, num);
+
+        $$ = p;
       }
 
 %%
 
 private Yylex lexer;
-private Scope mainScope;
-private FuncDefs funcDefs;
+public Seq program;
 
 private int yylex() {
     int yyl_return = -1;
@@ -338,12 +239,28 @@ public void yyerror(String s) {
     System.err.println("Parse error: " + s);
 }
 
-public Scope getScope()
-{
-    return mainScope;
-}
+public static void main(String args[]) throws IOException {
+    Parser yyparser = new Parser(new FileReader(args[0]));
+    
+    if (yyparser.yyparse() == 0)
+    {
+        ASTNode root = yyparser.program;
 
-public FuncDefs getFuncDefs()
-{
-    return funcDefs;
+        System.out.println("Printing the CFG First");
+        root.print(0);
+        System.out.println("Done printing the CFG");
+
+        CFG cfgObj = new CFG();
+        CFGNode cfg = cfgObj.createCFG(root).begin;
+
+        System.out.println("NODES:\n");
+        System.out.println(cfg.printNodes());
+
+        System.out.println("\nEDGES:\n");
+        System.out.println(cfg.printEdges());
+
+        System.out.println("\nPrinting the Topological sorted order\n");
+        LCM lcm_imp = new LCM();
+        lcm_imp.pass1(cfg, cfgObj.getTotalNodes());
+    }  
 }

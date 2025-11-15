@@ -1,0 +1,21 @@
+begin
+
+x := 1;
+y := 5;
+
+while (x < y) do
+
+    if (x % 2 = 0) then
+        x := x + 1;
+        y := y - x;
+
+    else 
+        y := y-1;
+        x := x + 10;
+
+    endif;
+done;
+
+z := x + y;
+
+end

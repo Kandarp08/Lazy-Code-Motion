@@ -1,25 +1,49 @@
+// IMT2022115 - Kandarp Dave
+
+import java.util.List;
 import java.util.ArrayList;
 
 interface ASTNode
 {
-
+    public String print(int indent); 
 }
 
 abstract class Expression implements ASTNode
 {
+    public void getVariablesUsed(ArrayList<String> varsUsed)
+    {
 
+    }
+    public String toMathsString()
+    {
+        return "";   
+    }
 }
 
 class Id extends Expression
 {
-    private String id;
+    public String id;
 
     public Id(String id)
     {
         this.id = id;
     }
 
-    public String getId()
+    public String toString()
+    {
+        return "(Id " + id + ")";
+    }
+
+    public String print(int indent)
+    {
+        String tabs = "\t".repeat(indent);
+        return tabs + toString();
+    }
+    public void getVariablesUsed(ArrayList<String> varsUsed)
+    {
+        varsUsed.add(id);
+    }
+    public String toMathsString()
     {
         return id;
     }
@@ -27,54 +51,59 @@ class Id extends Expression
 
 class Num extends Expression
 {
-    private int num;
+    public int num;
 
     public Num(int num)
     {
         this.num = num;
     }
 
-    public int getNum()
+    public String toString()
     {
-        return num;
+        return "(Num " + num + ")";
     }
-}
-
-class Bool extends Expression
-{
-    private boolean bool;
-
-    public Bool(boolean bool)
+    
+    public String print(int indent)
     {
-        this.bool = bool;
+        String tabs = "\t".repeat(indent);
+        return tabs + toString();
     }
-
-    public boolean getBool()
+    public void getVariablesUsed(ArrayList<String> varsUsed)
     {
-        return bool;
+        // varsUsed.add(id);
+    }
+    public String toMathsString()
+    {
+        return Integer.toString(num);
     }
 }
 
 class Operator implements ASTNode
 {
-    private String op;
+    public String op;
 
     public Operator(String op)
     {
         this.op = op;
     }
 
-    public String getOperator()
+    public String toString()
     {
-        return op;
+        return "(Op " + op + ")"; 
+    }
+    
+    public String print(int indent)
+    {
+        String tabs = "\t".repeat(indent);
+        return tabs + toString();
     }
 }
 
 class BinaryExpression extends Expression
 {
-    private Expression expression1;
-    private Expression expression2;
-    private Operator op;
+    public Expression expression1;
+    public Expression expression2;
+    public Operator op;
 
     public BinaryExpression(Expression expression1, Expression expression2, Operator op)
     {
@@ -82,20 +111,26 @@ class BinaryExpression extends Expression
         this.expression2 = expression2;
         this.op = op;
     }
-
-    public Expression getLeftExpression()
+    
+    public String print(int indent)
     {
-        return expression1;
+        String tabs = "\t".repeat(indent);
+        String str = "BinExpr\n" + tabs + "\tExpression 1\n" + expression1.print(indent + 2) + "\n" + op.print(indent+1) + "\n" + tabs + "\tExpression 2\n" + expression2.print(indent + 2) + "\n";
+
+        return tabs + str;
     }
-
-    public Expression getRightExpression()
+    public String toMathsString()
     {
-        return expression2;
+        return "(" + expression1.toMathsString() + " " + op.op + " " + expression2.toMathsString() + ")";
     }
-
-    public String getOperator()
+    public void getVariablesUsed(ArrayList<String> varsUsed)
     {
-        return op.getOperator();
+        // varsUsed.add(id);
+        expression1.getVariablesUsed(varsUsed);
+        expression2.getVariablesUsed(varsUsed);
+        // String currBinExprStr = expression1.toMathsString() + " " + op.op + " " + expression2.toMathsString();
+        String currBinExprStr = this.toMathsString();
+        varsUsed.add(currBinExprStr);
     }
 }
 
@@ -104,274 +139,258 @@ abstract class Stmt implements ASTNode
 
 }
 
-class Seq extends Stmt
-{
-    private ArrayList<Stmt> statements;
-
-    public Seq()
-    {
-        this.statements = new ArrayList<Stmt>();
-    }
-
-    public void addStmt(Stmt stmt)
-    {
-        statements.add(0, stmt);
-    }
-
-    public ArrayList<Stmt> getStatements()
-    {
-        return statements;
-    }
-}
-
-class Scope extends Stmt
-{
-    private Block block;
-    private Seq seq;
-
-    public Scope(Block block, Seq seq)
-    {
-        this.block = block;
-        this.seq = seq;
-    }
-
-    public Block getBlock()
-    {
-        return block;
-    }
-
-    public Seq getSeq()
-    {
-        return seq;
-    }
-}
-
 class Assignment extends Stmt
 {
-    private Id id;
-    private Expression expression;
+    public Id id;
+    public Expression expression;
     
     public Assignment(Id id, Expression expression)
     {
         this.id = id;
         this.expression = expression;
     }
-
-    public String getId()
+    
+    public String print(int indent)
     {
-        return id.getId();
-    }
+        String tabs = "\t".repeat(indent);
+        String str = "Assign(" + id + ")\n" + expression.print(indent + 2);
 
-    public Expression getExpression()
-    {
-        return expression;
+        return tabs + str;
     }
 }
 
 class If1 extends Stmt
 {
-    private Expression condition;
-    private Scope ifStmt;
-    private Scope elseStmt;
+    public Expression condition;
+    public Stmt ifStmt;
+    public Stmt elseStmt;
 
-    public If1(Expression condition, Scope ifStmt, Scope elseStmt)
+    public If1(Expression condition, Stmt ifStmt, Stmt elseStmt)
     {
         this.condition = condition;
         this.ifStmt = ifStmt;
         this.elseStmt = elseStmt;
     }
-
-    public Expression getCondition()
+    
+    public String print(int indent)
     {
-        return condition;
-    }
+        String tabs = "\t".repeat(indent);
+        String str = "If1\n" + tabs + "\tCondition\n" + condition.print(indent + 2) + "\n" + tabs + "\t\tIfStmt\n" + ifStmt.print(indent + 2) + tabs + "\t\tElseStmt\n" + elseStmt.print(indent + 2);
 
-    public Scope getIfStmt()
-    {
-        return ifStmt;
-    }
-
-    public Scope getElseStmt()
-    {
-        return elseStmt;
+        return tabs + str;
     }
 }
 
 class Loop extends Stmt
 {
-    private Expression condition;
-    private Scope stmt;
+    public Expression condition;
+    public Stmt stmt;
 
-    public Loop(Expression condition, Scope stmt)
+    public Loop(Expression condition, Stmt stmt)
     {
         this.condition = condition;
         this.stmt = stmt;
     }
 
-    public Expression getCondition()
+    public String print(int indent)
     {
-        return condition;
-    }
+        String tabs = "\t".repeat(indent);
+        String str = "Loop\n" + tabs + "Condition\n" + condition.print(indent + 1) + "\n" + tabs + "Stmt\n" + stmt.print(indent + 1);
 
-    public Scope getStmt()
-    {
-        return stmt;
+        return tabs + str;
     }
 }
 
 class Params implements ASTNode
 {
-    private ArrayList<Declaration> params;
+    public List<Id> params;
 
-    public Params(ArrayList<Declaration> params)
+    public Params(List<Id> params)
     {
         this.params = params;
     }
 
-    public ArrayList<Declaration> getParams()
+    public String toString()
     {
-        return params;
+        String str = "Params:";
+
+        for (Id id : params)
+            str += " " + id;
+
+        return str;
+    }
+
+    public String print(int indent)
+    {
+        String tabs = "\t".repeat(indent);
+        return tabs + toString();
     }
 }
 
 class Args implements ASTNode
 {
-    private ArrayList<Expression> args;
+    public List<Expression> args;
 
-    public Args(ArrayList<Expression> args)
+    public Args(List<Expression> args)
     {
         this.args = args;
     }
 
-    public ArrayList<Expression> getArgs()
+    public String toString()
     {
-        return args;
+        String str = "Args:";
+
+        for (Expression expr : args)
+            str += " " + expr;
+
+        return str;
+    }
+    
+    public String print(int indent)
+    {
+        String tabs = "\t".repeat(indent);
+        return tabs + toString();
     }
 }
 
 class FuncDef extends Stmt
 {
-    private Id id;
-    private Params params;
-    private Block block;
-    private Seq funcBody;
-    private Expression returnExpr;
+    public Id id;
+    public Params params;
+    public Stmt stmt;
+    public Expression returnExpr;
 
-    public FuncDef(Id id, Params params, Block block, Seq funcBody, Expression expr)
+    public FuncDef(Id id, Params params, Stmt stmt, Expression expr)
     {
         this.id = id;
         this.params = params;
-        this.block = block;
-        this.funcBody = funcBody;
+        this.stmt = stmt;
         this.returnExpr = expr;
     }
-
-    public String getId()
+    
+    public String print(int indent)
     {
-        return id.getId();
-    }
+        String tabs = "\t".repeat(indent);
+        String str = "FuncDef\n" + tabs + "FuncId: " + id + "\n" + params.print(indent) + "\n" + tabs + "Stmt\n" + stmt.print(indent + 1) + "\n" + tabs + "ReturnExpr\n" + returnExpr.print(indent + 1);
 
-    public Params getParams()
-    {
-        return params;
-    }
-
-    public Block getBlock()
-    {
-        return block;
-    }
-
-    public Seq getFuncBody()
-    {
-        return funcBody;
-    }
-
-    public Expression getReturnExpression()
-    {
-        return returnExpr;
+        return tabs + str;
     }
 }
 
 class FuncCall extends Expression
 {
-    private Id id;
-    private Args args;
+    public Id id;
+    public Args args;
 
     public FuncCall(Id id, Args args)
     {
         this.id = id;
         this.args = args;
     }
-
-    public String getId()
+    
+    public String print(int indent)
     {
-        return id.getId();
+        String tabs = "\t".repeat(indent);
+        String str = "FuncCall\n" + tabs + "FuncId: " + id + "\n" + args.print(indent);
+
+        return tabs + str;
     }
-
-    public Args getArgs()
+    public void getVariablesUsed(ArrayList<String> varsUsed)
     {
-        return args;
+
     }
-}
-
-class Declaration extends Stmt
-{
-    private String type;
-    private Id id;
-
-    public Declaration(String type, Id id)
+    public String toMathsString()
     {
-        this.type = type;
-        this.id = id;
-    }
-
-    public String getType()
-    {
-        return type;
-    }
-
-    public String getId()
-    {
-        return id.getId();
+        return "";
     }
 }
 
-class Block
+class Seq extends Stmt
 {
-    private ArrayList<Declaration> decls;
+    public ArrayList<Stmt> statements;
 
-    public Block()
+    public Seq(ArrayList<Stmt> statements)
     {
-        this.decls = new ArrayList<Declaration>();
+        this.statements = statements;
     }
 
-    public void addDecl(Declaration decl)
+    public String print(int indent)
     {
-        decls.add(0, decl);
-    }
+        String tabs = "\t".repeat(indent);
+        String str = "Seq\n";
 
-    public ArrayList<Declaration> getDeclarations()
-    {
-        return decls;
+        for (Stmt stmt : statements)
+            str += stmt.print(indent + 1) + "\n\n";
+
+        return tabs + str;
     }
 }
 
-class FuncDefs
+public class ast
 {
-    private ArrayList<FuncDef> funcDefs;
-
-    public FuncDefs()
+    public static void main(String args[])
     {
-        this.funcDefs = new ArrayList<FuncDef>();
-    }
+        Expression num1 = new Num(1);
+        Expression num2 = new Num(2);
+        Expression num5 = new Num(5);
+        
+        Id x = new Id("x");
+        Id y = new Id("y");
+        Id f = new Id("f");
+        Id sum = new Id("sum"); 
 
-    public void addFuncDef(FuncDef funcDef)
-    {
-        funcDefs.add(0, funcDef);
-    }
+        Operator add = new Operator("+");
+        Operator sub = new Operator("-");
+        Operator lt = new Operator("<");
+        Operator mod = new Operator("%");
+        Operator eq = new Operator("=");
 
-    public ArrayList<FuncDef> getFuncDefs()
-    {
-        return funcDefs;
+        Stmt assignx = new Assignment(x, num1);
+        Stmt assigny = new Assignment(y, num5);
+
+        Expression incx = new BinaryExpression(x, num1, add);
+        Expression yminusx = new BinaryExpression(y, x, sub);
+        Expression xplusy = new BinaryExpression(x, y, add);
+        Expression xmod2 = new BinaryExpression(x, num2, mod);
+        Expression ifCond = new BinaryExpression(xmod2, num1, eq);
+        Expression whileCond = new BinaryExpression(x, num5, lt);
+
+        Stmt assignx1 = new Assignment(x, incx);
+        Stmt assigny1 = new Assignment(y, yminusx);
+        Stmt assignsum = new Assignment(sum, xplusy);
+
+        List<Id> params = new ArrayList<Id>();
+        params.add(x);
+        params.add(y);
+        
+        List<Expression> arg = new ArrayList<Expression>();
+        arg.add(x);
+        arg.add(y);
+
+        Params par = new Params(params);
+        Args ar = new Args(arg);
+
+        FuncDef funcDef = new FuncDef(f, par, assignsum, sum);
+        FuncCall funcCall = new FuncCall(f, ar);
+
+        Stmt assigny2 = new Assignment(y, funcCall);
+
+        ArrayList<Stmt> ifStmt = new ArrayList<Stmt>();
+        ifStmt.add(assignx1);
+        ifStmt.add(assigny1);
+        Seq ifSeq = new Seq(ifStmt);
+
+        If1 if1 = new If1(ifCond, ifSeq, assigny2);
+        Loop loop = new Loop(whileCond, if1);
+
+        ArrayList<Stmt> program = new ArrayList<Stmt>();
+        program.add(funcDef);
+        program.add(assignx);
+        program.add(assigny);
+        program.add(loop);
+
+        Stmt programSeq = new Seq(program);
+
+        System.out.println(programSeq.print(0));
     }
 }

@@ -1,0 +1,16 @@
+begin
+
+a := 10;
+b := 5;
+
+if (a > b) then
+    x := a + b;
+
+else
+    y := a + b;
+
+endif;
+
+z := a + b;
+
+end
