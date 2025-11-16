@@ -962,9 +962,6 @@ class LCM
                 POSTin[nodeId] = new HashSet<String>(UniversalSet);
                 ArrayList<CFGNode> entries = nodes[nodeId].getEntries();
 
-                if (entries.size() == 0)
-                    POSTout[nodeId] = new HashSet<String>();
-
                 for(CFGNode pred : entries)
                 {
                     POSTin[nodeId].retainAll(POSTout[pred.getId()]);
