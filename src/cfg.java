@@ -582,6 +582,10 @@ class LCM
     HashSet<String>[] POSTout;
     HashSet<String>[] latest;
 
+    // pass4 variables
+    HashSet<String>[] Usedin;
+    HashSet<String>[] Usedout;
+
     public void pass1(CFGNode node, int totalNodes)
     {
         this.totalNodes = totalNodes;
@@ -700,6 +704,10 @@ class LCM
                 //ANTout[n] = intersection of ANTin[s] for all successors s of n.
                 ANTout[nodeId] = new HashSet<String>(UniversalSet);
                 ArrayList<CFGNode> exits = nodes[nodeId].getExits();
+
+                if (exits.size() == 0)
+                    ANTout[nodeId] = new HashSet<String>();
+
                 for(CFGNode succ : exits)
                 {
                     ANTout[nodeId].retainAll(ANTin[succ.getId()]);
@@ -848,8 +856,8 @@ class LCM
             for(int i=0;i<ToposortialOrder.size();i++)
             {
                 int nodeId = ToposortialOrder.get(i);
-                HashSet<String> oldANTin = (HashSet<String>)ANTin[nodeId].clone();
-                HashSet<String> oldANTout = (HashSet<String>)ANTout[nodeId].clone();
+                HashSet<String> oldAVin = (HashSet<String>)AVin[nodeId].clone();
+                HashSet<String> oldAVout = (HashSet<String>)AVout[nodeId].clone();
 
                 //AVout[n] = (ANTin[n] Union AVIn[n]) - kill[n];
                 AVout[nodeId] = new HashSet<String>(ANTin[nodeId]);
@@ -859,17 +867,17 @@ class LCM
                 //AVin[n] = intersection of AVout[p] for all predecessors p of n.
                 AVin[nodeId] = new HashSet<String>(UniversalSet);
                 ArrayList<CFGNode> entries = nodes[nodeId].getEntries();
+
+                if (entries.size() == 0)
+                    AVin[nodeId] = new HashSet<String>();
+
                 for(CFGNode pred : entries)
                 {
                     AVin[nodeId].retainAll(AVout[pred.getId()]);
                 }
 
-                //earliest[n] = ANTin[n] - AVIn[n].
-                earliest[nodeId] = new HashSet<String>(ANTin[nodeId]);
-                earliest[nodeId].removeAll(AVin[nodeId]);
-
                 //check for convergence
-                if(!oldANTin.equals(ANTin[nodeId]) || !oldANTout.equals(ANTout[nodeId]))
+                if(!oldAVin.equals(AVin[nodeId]) || !oldAVout.equals(AVout[nodeId]))
                 {
                     // convergence = false;
                     nochanges = false;
@@ -892,6 +900,15 @@ class LCM
             {
                 convergence = true;
             }
+        }
+
+        for (int i = 0; i < ToposortialOrder.size(); i++)
+        {
+            int nodeId = ToposortialOrder.get(i);
+
+            //earliest[n] = ANTin[n] - AVIn[n].
+            earliest[nodeId] = new HashSet<String>(ANTin[nodeId]);
+            earliest[nodeId].removeAll(AVin[nodeId]);
         }
 
         System.out.println("\nFinal AVin, AVout and earliest sets:");
@@ -944,35 +961,14 @@ class LCM
                 // POSTin[n] = intersection of POSTout[p] for all predecessors p of n.
                 POSTin[nodeId] = new HashSet<String>(UniversalSet);
                 ArrayList<CFGNode> entries = nodes[nodeId].getEntries();
+
+                if (entries.size() == 0)
+                    POSTout[nodeId] = new HashSet<String>();
+
                 for(CFGNode pred : entries)
                 {
                     POSTin[nodeId].retainAll(POSTout[pred.getId()]);
                 }
-
-                HashSet<String> S_succ = new HashSet<String>(UniversalSet);
-                ArrayList<CFGNode> exits = nodes[nodeId].getExits();
-
-                for (CFGNode succ : exits)
-                {
-                    HashSet<String> temp = new HashSet<String>(earliest[succ.getId()]);
-                    temp.addAll(POSTin[succ.getId()]);
-
-                    S_succ.retainAll(temp);
-                }
-
-                // latest[n] = (earliest[n] Union POSTin[n]) intersection (use[n] Union ~S_succ);
-                latest[nodeId] = new HashSet<String>(earliest[nodeId]);
-                latest[nodeId].addAll(POSTin[nodeId]);
-
-                HashSet<String> s2 = new HashSet<String>(use[nodeId]);
-
-                // Calculate complement of S_succ
-                HashSet<String> S_succ_comp = new HashSet<String>(UniversalSet);
-                S_succ_comp.removeAll(S_succ);
-
-                s2.addAll(S_succ_comp);
-
-                latest[nodeId].retainAll(s2);
 
                 //check for convergence
                 if(!oldPOSTin.equals(POSTin[nodeId]) || !oldPOSTout.equals(POSTout[nodeId]))
@@ -1000,6 +996,36 @@ class LCM
             }
         }
 
+        for (int i = ToposortialOrder.size() - 1; i >= 0; i--)
+        {
+            int nodeId = ToposortialOrder.get(i);    
+            HashSet<String> S_succ = new HashSet<String>(UniversalSet);
+            ArrayList<CFGNode> exits = nodes[nodeId].getExits();
+
+            for (CFGNode succ : exits)
+            {
+                HashSet<String> temp = new HashSet<String>(earliest[succ.getId()]);
+                temp.addAll(POSTin[succ.getId()]);
+
+                S_succ.retainAll(temp);
+            }
+
+            // latest[n] = (earliest[n] Union POSTin[n]) intersection (use[n] Union ~S_succ);
+            latest[nodeId] = new HashSet<String>(earliest[nodeId]);
+            latest[nodeId].addAll(POSTin[nodeId]);
+
+            HashSet<String> s2 = new HashSet<String>(use[nodeId]);
+                
+            // Calculate complement of S_succ
+            HashSet<String> S_succ_comp = new HashSet<String>(UniversalSet);
+            S_succ_comp.removeAll(S_succ);
+
+            s2.addAll(S_succ_comp);
+
+            latest[nodeId].retainAll(s2);
+        }
+        
+
         System.out.println("\nFinal POSTin, POSTout and latest sets:");
         for(int i=0;i<ToposortialOrder.size();i++)
         {
@@ -1010,7 +1036,82 @@ class LCM
             System.out.println("latest[" + nodeId + "] = " + latest[nodeId]);
         }
 
-        utility_print();
+        pass4();
+    }
+
+    public void pass4()
+    {
+        Usedin = (HashSet<String>[])new HashSet[totalNodes];
+        Usedout = (HashSet<String>[])new HashSet[totalNodes];
+
+        //Initialization of the sets.
+        //Usedout - universal set
+        //Usedin - empty
+        for(int i=0;i<totalNodes;i++)
+        {
+            Usedout[i] = new HashSet<String>(UniversalSet);                   //initialized to universal set.
+            Usedin[i] = new HashSet<String>();       //initialized to empty set.
+        }
+        
+        boolean convergence = false;
+        while(!convergence)
+        {
+            boolean nochanges = true;
+            boolean[] indicesChanged = new boolean[totalNodes];
+            for(int i= ToposortialOrder.size() - 1;i >= 0; i--)
+            {
+                int nodeId = ToposortialOrder.get(i);
+                HashSet<String> oldUsedin = (HashSet<String>)Usedin[nodeId].clone();
+                HashSet<String> oldUsedout = (HashSet<String>)Usedout[nodeId].clone();
+
+                // Usedin[n] = (use[n] Union Usedout[n]) - latest[n];
+                Usedin[nodeId] = new HashSet<String>(use[nodeId]);
+                Usedin[nodeId].addAll(Usedout[nodeId]);
+                Usedin[nodeId].removeAll(latest[nodeId]);
+
+                // Usedout[n] = intersection of Usedin[s] over all successors s
+                Usedout[nodeId] = new HashSet<String>(UniversalSet);
+                ArrayList<CFGNode> exits = nodes[nodeId].getExits();
+
+                for (CFGNode succ : exits)
+                {
+                    Usedout[nodeId].retainAll(Usedin[succ.getId()]);
+                }
+
+                //check for convergence
+                if(!oldUsedin.equals(Usedin[nodeId]) || !oldUsedout.equals(Usedout[nodeId]))
+                {
+                    // convergence = false;
+                    nochanges = false;
+                    indicesChanged[nodeId] = true;
+                }
+            }
+
+            System.out.println("\n\nAfter iteration:");
+            for(int i=0;i<totalNodes;i++)
+            {
+                if(indicesChanged[i])
+                {
+                    System.out.println(i);
+                    // System.out.println("Node " + i + " changed:");
+                    // System.out.println("ANTin[" + i + "] = " + ANTin[i]);
+                    // System.out.println("ANTout[" + i + "] = " + ANTout[i]);
+                }
+            }
+            if(nochanges)
+            {
+                convergence = true;
+            }
+        }
+
+        System.out.println("\nFinal Usedin, Usedout:");
+        for(int i=0;i<ToposortialOrder.size();i++)
+        {
+            int nodeId = i;
+            System.out.println("Node " + nodeId + ":");
+            System.out.println("Usedin[" + nodeId + "] = " + Usedin[nodeId]);
+            System.out.println("Usedout[" + nodeId + "] = " + Usedout[nodeId]);
+        }
     }
 
     public void utility_print()

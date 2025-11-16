@@ -7,4 +7,8 @@ c := 17;
 x := a + b;
 y := b + c;
 
+z := a + b;
+w := b + c;
+x1 := a + b;
+
 end
