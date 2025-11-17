@@ -1,11 +1,13 @@
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HashMap;
 
 import java.io.FileWriter;
 import java.io.IOException;
 
 class lcm_impl
 {
+    CFGNode rootNode;
     CFGNode[] nodes;       //indexed by id.
     int totalNodes;
 
@@ -23,18 +25,23 @@ class lcm_impl
     HashSet<String>[] AVout;
     HashSet<String>[] earliest;
 
-    // pass3 variables
+    //pass3 variables
     HashSet<String>[] POSTin;
     HashSet<String>[] POSTout;
     HashSet<String>[] latest;
 
-    // pass4 variables
+    //pass4 variables
     HashSet<String>[] Usedin;
     HashSet<String>[] Usedout;
+
+    //code rewrite variables
+    HashMap<String,String> tempVarMap; //maps expression to temp variable name.
+    int newNodeID;
 
     public void pass1(CFGNode node, int totalNodes)
     {
         //basic initializations.
+        this.rootNode = node;
         this.totalNodes = totalNodes;
         ToposortialOrder = new ArrayList<Integer>();
         nodes = new CFGNode[totalNodes];
@@ -541,7 +548,144 @@ class lcm_impl
 
     public void code_rewrite()
     {
-        
+        tempVarMap = new HashMap<String,String>();
+        newNodeID = totalNodes;
+
+        //Re-writing all the expression e in latest[n] Intersection UsedOut[n] with temp variables.
+        for(int i=0;i<totalNodes;i++)
+        {
+            //latest[i] Intersection UsedOut[i]
+            HashSet<String> expressionsToReplace = new HashSet<String>(latest[i]);
+            expressionsToReplace.retainAll(Usedout[i]);
+            // if(expressionsToReplace.isEmpty())
+            // {
+            //     continue;
+            // }
+            
+            //Creating new temp variable for expressions which don't have one.
+            for(String exprStr: expressionsToReplace)
+            {
+                if(!tempVarMap.containsKey(exprStr))
+                {
+                    String tempVarName = "t" + tempVarMap.size();
+                    tempVarMap.put(exprStr, tempVarName);
+                }
+            }
+            
+            //Replacing all the expressions in the statements of the CFGNode with the temp variables if they exist.
+            CFGNode node = nodes[i];
+            if(node instanceof InstructionNode)
+            {
+                Stmt stmt = ((InstructionNode)node).stmt;
+                if(stmt instanceof Assignment)
+                {
+                    //Get the expression string.
+                    String exprStr = ((Assignment)stmt).expression.toMathsString();
+                    Expression expr = ((Assignment)stmt).expression;
+                    // System.out.println("In Node " + i + ", found expression to replace: " + exprStr + "has temp variable: " + tempVarMap.get(exprStr));
+
+
+                    if(tempVarMap.get(exprStr) == null)
+                    {
+                        continue;   //no replacement needed.
+                    }
+                    //Replace with temp variable.
+                    String tempVarName = tempVarMap.get(exprStr);
+                    Id tempId = new Id(tempVarName);
+                    ((Assignment)stmt).expression = tempId;
+
+                    System.out.println("In Node " + i + ", replaced expression " + exprStr + " with temp variable " + tempVarName);
+                    if(expressionsToReplace.contains(exprStr))
+                    {
+                        //creating computation of temp variable statement.
+                        Assignment tempAssignStmt = new Assignment(tempId,expr);
+                        Assignment originalAssignStmt = (Assignment)stmt;
+
+                        //Creating a new Seq statement with tempAssignStmt followed by originalAssignStmt.
+                        Seq seq = new Seq(new ArrayList<Stmt>());
+                        seq.statements.add(tempAssignStmt);
+                        seq.statements.add(originalAssignStmt);
+                        ((InstructionNode)node).stmt = seq;
+
+                    }
+                }
+            }
+            else if(node instanceof IfNode)
+            {
+
+            }
+            else if(node instanceof LoopNode)
+            {
+            }
+            else if(node instanceof DummyNode)
+            {
+                //do nothing.
+            }
+            else
+            {
+                System.out.println("Error: Unknown CFG Node type.");
+            }
+        }
+
+        //Setting 'color' of all the CFGNodes to '0'.
+        reset_colors();
+
+        // System.out.println("rootNode and nodes[0] are same or not" + (rootNode == nodes[0]));
+        // System.out.println("rootNode.getExits[0]==nodes[1]" + (rootNode.getExits().get(0) == nodes[1]));
+        // System.out.println("rootNode.getExits[0].getExits[0]==nodes[2]" + (rootNode.getExits().get(0).getExits().get(0) == nodes[2]));
+        // System.out.println("rootNode.getExits[0].getExits[0].getExits[0]==nodes[3]" + (rootNode.getExits().get(0).getExits().get(0).getExits().get(0) == nodes[3]));
+        // System.out.println("rootNode.getExits[0].getExits[0].getExits[1]==nodes[4]" + (rootNode.getExits().get(0).getExits().get(0).getExits().get(1) == nodes[4]));
+        // System.out.println("rootNode.getExits[0].getExits[0].getExits[0].getExits[0]==nodes[5]" + (rootNode.getExits().get(0).getExits().get(0).getExits().get(0).getExits().get(0) == nodes[5]));
+        // System.out.println("rootNode.getExits[0].getExits[0].getExits[1].getExits[0]==nodes[5]" + (rootNode.getExits().get(0).getExits().get(0).getExits().get(1).getExits().get(0) == nodes[5]));
+        // System.out.println("rootNode.getExits[0].getExits[0].getExits[1].getExits[0]==nodes[5]" + (rootNode.getExits().get(0).getExits().get(0).getExits().get(1).getExits().get(0) == nodes[5]));
+        // for(int i=0;i<totalNodes;i++)
+        // {
+        //     if(nodes[i] instanceof InstructionNode)
+        //     {
+        //         //check to see if the stmt variable of nodes[i] is an instance of Assignment and if it is the case, print the stmt.expression.toMathsString().
+        //         InstructionNode instrNode = (InstructionNode)nodes[i];
+        //         if(instrNode.stmt instanceof Assignment)
+        //         {
+        //             Assignment assignStmt = (Assignment)instrNode.stmt;
+        //             System.out.println("Printing finally iterative, Node " + i + " Assignment expression: " + assignStmt.expression.toMathsString());
+        //         }
+        //     }
+        // }
+        System.out.println("Code rewriting finished. New CFG:");
+        System.out.println(rootNode.printNodes());
+        System.out.println(rootNode.printEdges());
+        System.out.println("End of new CFG");
+    }
+    public void reset_colors()
+    {
+        for(int i=0;i<totalNodes;i++)
+        {
+            CFGNode node = nodes[i];
+            if(node instanceof InstructionNode)
+            {
+                InstructionNode instrNode = (InstructionNode)node;
+                instrNode.color = 0;
+            }
+            else if(node instanceof IfNode)
+            {
+                IfNode ifNode = (IfNode)node;
+                ifNode.color = 0;
+            }
+            else if(node instanceof LoopNode)
+            {
+                LoopNode loopNode = (LoopNode)node;
+                loopNode.color = 0;
+            }
+            else if(node instanceof DummyNode)
+            {
+                DummyNode dummyNode = (DummyNode)node;
+                dummyNode.color = 0;
+            }
+            else
+            {
+                System.out.println("Error: Unknown CFG Node type.");
+            }
+        }
     }
 
     private String csvEscape(HashSet<String> set) {
