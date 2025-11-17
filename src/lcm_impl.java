@@ -1,9 +1,11 @@
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
-
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 class lcm_impl
 {
@@ -655,6 +657,30 @@ class lcm_impl
         System.out.println(rootNode.printNodes());
         System.out.println(rootNode.printEdges());
         System.out.println("End of new CFG");
+
+        try
+        {
+            Files.deleteIfExists(Paths.get("output.txt"));
+               
+            BufferedWriter bw = new BufferedWriter(new FileWriter("output.txt", true));
+            
+            bw.write("begin");
+            bw.newLine();
+            bw.newLine();
+            
+            convert_to_code(rootNode, 0, bw);
+
+            bw.newLine();
+            bw.write("end");
+            bw.newLine();
+
+            bw.close();
+        }
+
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+        }
     }
     public void reset_colors()
     {
@@ -732,6 +758,142 @@ class lcm_impl
         }
         catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void convert_to_code(CFGNode node, int indent, BufferedWriter bw)
+    {
+        if (node.getColor() == 3)
+            return;
+
+        String spaceString = "";
+
+        for (int i = 1; i <= indent; ++i)
+            spaceString += "\t";
+
+        try
+        {
+            if (node instanceof InstructionNode)
+            {
+                InstructionNode instructionNode = (InstructionNode)node;
+                Stmt stmt = instructionNode.stmt;
+
+                if (stmt instanceof Assignment)
+                {
+                    Assignment assignment = (Assignment)stmt;
+
+                    bw.write(spaceString);
+                    bw.write(assignment.toString());
+                    bw.newLine();
+                }
+
+                else if (stmt instanceof Seq)
+                {
+                    Seq seq = (Seq)stmt;
+                    ArrayList<Stmt> statements = seq.statements;
+
+                    Assignment assign1 = (Assignment)statements.get(0);
+                    Assignment assign2 = (Assignment)statements.get(1);
+
+                    bw.write(spaceString);
+                    bw.write(assign1.toString());
+                    bw.newLine();
+
+                    bw.write(spaceString);
+                    bw.write(assign2.toString());
+                    bw.newLine();
+                }
+
+                ArrayList<CFGNode> exits = node.getExits();
+
+                if (exits.size() > 0)
+                    convert_to_code(exits.get(0), indent, bw);
+            }
+
+            else if (node instanceof DecisionNode)
+            {
+                DecisionNode decisionNode = (DecisionNode)node;
+
+                if (decisionNode instanceof IfNode)
+                {
+                    IfNode ifNode = (IfNode)decisionNode;
+                    Expression cond = ifNode.if1.condition;
+                    CFGNode ifCFG = ifNode.getExits().get(0);
+                    CFGNode elseCFG = ifNode.getExits().get(1);
+
+                    bw.newLine();
+                    bw.write(spaceString);
+                    bw.write("if (" + cond.toString() + ") then");
+                    bw.newLine();
+
+                    convert_to_code(ifCFG, indent + 1, bw);
+
+                    bw.newLine();
+                    bw.write(spaceString);
+                    bw.write("else");
+                    bw.newLine();
+
+                    convert_to_code(elseCFG, indent + 1, bw);
+                }
+
+                else if (decisionNode instanceof LoopNode)
+                {
+                    LoopNode loopNode = (LoopNode)decisionNode;
+                    Expression cond = loopNode.loop.condition;
+
+                    loopNode.color = 3;
+
+                    bw.newLine();
+                    bw.write(spaceString);
+                    bw.write("while (" + cond.toString() + ") do");
+                    bw.newLine();
+
+                    ArrayList<CFGNode> exits = loopNode.getExits();
+
+                    convert_to_code(exits.get(0), indent + 1, bw);
+                    bw.write(spaceString);
+                    bw.write("done;");
+                    bw.newLine();
+
+                    convert_to_code(exits.get(1), indent, bw);
+                }
+            }
+
+            else if (node instanceof DummyNode)
+            {
+                ArrayList<CFGNode> exits = node.getExits();
+
+                if (node.getEntries().size() == 2)
+                {
+                    DummyNode dummyNode = (DummyNode)node;
+                    
+                    if (dummyNode.color == 4)
+                        dummyNode.color = 1;
+
+                    else
+                    {
+                        spaceString = "";
+
+                        for (int i = 1; i < indent; ++i)
+                            spaceString += "\t";
+
+                        bw.newLine();
+                        bw.write(spaceString);
+                        bw.write("endif;");
+                        bw.newLine();
+
+                        convert_to_code(exits.get(0), indent - 1, bw);
+                    }
+                }
+
+                else if (exits.size() > 0)
+                    convert_to_code(exits.get(0), indent - 1, bw);
+            }
+        }
+
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
         }
     }
 }

@@ -31,7 +31,7 @@ class Id extends Expression
 
     public String toString()
     {
-        return "(Id " + id + ")";
+        return id;
     }
 
     public String print(int indent)
@@ -41,7 +41,7 @@ class Id extends Expression
     }
     public void getVariablesUsed(ArrayList<String> varsUsed)
     {
-        // varsUsed.add(id);
+        varsUsed.add(id);
     }
     public String toMathsString()
     {
@@ -60,7 +60,7 @@ class Num extends Expression
 
     public String toString()
     {
-        return "(Num " + num + ")";
+        return Integer.toString(num);
     }
     
     public String print(int indent)
@@ -89,7 +89,7 @@ class Operator implements ASTNode
 
     public String toString()
     {
-        return "(Op " + op + ")"; 
+        return op;
     }
     
     public String print(int indent)
@@ -111,6 +111,11 @@ class BinaryExpression extends Expression
         this.expression2 = expression2;
         this.op = op;
     }
+
+    public String toString()
+    {
+        return "(" + expression1 + " " + op + " " + expression2 + ")";
+    }
     
     public String print(int indent)
     {
@@ -119,6 +124,7 @@ class BinaryExpression extends Expression
 
         return tabs + str;
     }
+
     public String toMathsString()
     {
         return "(" + expression1.toMathsString() + " " + op.op + " " + expression2.toMathsString() + ")";
@@ -156,6 +162,11 @@ class Assignment extends Stmt
         String str = "Assign(" + id + ")\n" + expression.print(indent + 2);
 
         return tabs + str;
+    }
+
+    public String toString()
+    {
+        return id + " := " + expression + ";";
     }
 }
 
