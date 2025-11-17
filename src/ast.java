@@ -41,7 +41,7 @@ class Id extends Expression
     }
     public void getVariablesUsed(ArrayList<String> varsUsed)
     {
-        varsUsed.add(id);
+        // varsUsed.add(id);
     }
     public String toMathsString()
     {

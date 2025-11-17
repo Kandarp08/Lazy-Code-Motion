@@ -16,10 +16,10 @@
 
 
 
-//#line 1 "parser.y"
-
+//#line 2 "parser.y"
 import java.io.*;
 import java.util.*;
+
 //#line 21 "Parser.java"
 
 
@@ -372,8 +372,7 @@ final static String yyrule[] = {
 "args : NUM ',' args",
 };
 
-//#line 218 "parser.y"
-
+//#line 220 "parser.y"
 
 private Yylex lexer;
 public Seq program;
@@ -418,11 +417,11 @@ public static void main(String args[]) throws IOException {
         System.out.println(cfg.printEdges());
 
         System.out.println("\nPrinting the Topological sorted order\n");
-        LCM lcm_imp = new LCM();
+        lcm_impl lcm_imp = new lcm_impl();
         lcm_imp.pass1(cfg, cfgObj.getTotalNodes());
     }  
 }
-//#line 354 "Parser.java"
+//#line 353 "Parser.java"
 //###############################################################
 // method: yylexdebug : check lexer state
 //###############################################################
@@ -577,15 +576,15 @@ boolean doaction;
       {
 //########## USER-SUPPLIED ACTIONS ##########
 case 1:
-//#line 25 "parser.y"
+//#line 26 "parser.y"
 { program = (Seq)val_peek(1).obj; }
 break;
 case 2:
-//#line 29 "parser.y"
+//#line 30 "parser.y"
 { yyval.obj = new Seq(new ArrayList<Stmt>()); }
 break;
 case 3:
-//#line 32 "parser.y"
+//#line 33 "parser.y"
 {
         ArrayList<Stmt> stmts = ((Seq)val_peek(0).obj).statements;
         stmts.add(0, (Stmt)val_peek(1).obj);
@@ -594,115 +593,115 @@ case 3:
       }
 break;
 case 8:
-//#line 46 "parser.y"
+//#line 47 "parser.y"
 { 
     Id id = new Id(val_peek(2).sval);
     yyval.obj = new Assignment(id, (Expression)val_peek(0).obj);
 }
 break;
 case 9:
-//#line 55 "parser.y"
+//#line 56 "parser.y"
 { yyval.obj = new If1((Expression)val_peek(6).obj, (Stmt)val_peek(3).obj, (Stmt)val_peek(1).obj); }
 break;
 case 10:
-//#line 61 "parser.y"
+//#line 62 "parser.y"
 { yyval.obj = new Loop((Expression)val_peek(4).obj, (Stmt)val_peek(1).obj); }
 break;
 case 11:
-//#line 65 "parser.y"
+//#line 66 "parser.y"
 { yyval.obj = new Num(val_peek(0).ival); }
 break;
 case 12:
-//#line 68 "parser.y"
+//#line 69 "parser.y"
 { yyval.obj = new Id(val_peek(0).sval); }
 break;
 case 15:
-//#line 75 "parser.y"
+//#line 76 "parser.y"
 {
         Operator op = new Operator("+");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 16:
-//#line 81 "parser.y"
+//#line 82 "parser.y"
 {
         Operator op = new Operator("-");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 17:
-//#line 87 "parser.y"
+//#line 88 "parser.y"
 {
         Operator op = new Operator("*");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 18:
-//#line 93 "parser.y"
+//#line 94 "parser.y"
 {
         Operator op = new Operator("/");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 19:
-//#line 99 "parser.y"
+//#line 100 "parser.y"
 {
         Operator op = new Operator("%");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 20:
-//#line 105 "parser.y"
+//#line 106 "parser.y"
 {
         Operator op = new Operator("<=");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 21:
-//#line 111 "parser.y"
+//#line 112 "parser.y"
 {
         Operator op = new Operator(">=");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 22:
-//#line 117 "parser.y"
+//#line 118 "parser.y"
 {
         Operator op = new Operator("<");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 23:
-//#line 123 "parser.y"
+//#line 124 "parser.y"
 {
         Operator op = new Operator(">");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 24:
-//#line 129 "parser.y"
+//#line 130 "parser.y"
 {
         Operator op = new Operator("=");
         yyval.obj = new BinaryExpression((Expression)val_peek(2).obj, (Expression)val_peek(0).obj, op);
       }
 break;
 case 25:
-//#line 135 "parser.y"
+//#line 136 "parser.y"
 { yyval.obj = val_peek(1).obj; }
 break;
 case 26:
-//#line 142 "parser.y"
+//#line 143 "parser.y"
 {
     Id id = new Id(val_peek(9).sval);
     yyval.obj = new FuncDef(id, new Params((ArrayList)val_peek(7).obj), (Stmt)val_peek(4).obj, (Expression)val_peek(2).obj);
 }
 break;
 case 27:
-//#line 149 "parser.y"
+//#line 150 "parser.y"
 { yyval.obj = new ArrayList<Id>(); }
 break;
 case 28:
-//#line 152 "parser.y"
+//#line 153 "parser.y"
 {  
         Id id = new Id(val_peek(0).sval);
 
@@ -713,7 +712,7 @@ case 28:
       }
 break;
 case 29:
-//#line 162 "parser.y"
+//#line 163 "parser.y"
 {
         Id id = new Id(val_peek(2).sval);
         ArrayList<Id> p = (ArrayList)val_peek(0).obj;
@@ -723,18 +722,18 @@ case 29:
       }
 break;
 case 30:
-//#line 171 "parser.y"
+//#line 172 "parser.y"
 {
     Id id = new Id(val_peek(3).sval);
     yyval.obj = new FuncCall(id, new Args((ArrayList)val_peek(1).obj));
 }
 break;
 case 31:
-//#line 178 "parser.y"
+//#line 179 "parser.y"
 { yyval.obj = new ArrayList<Expression>(); }
 break;
 case 32:
-//#line 181 "parser.y"
+//#line 182 "parser.y"
 {  
         Id id = new Id(val_peek(0).sval);
 
@@ -745,7 +744,7 @@ case 32:
       }
 break;
 case 33:
-//#line 191 "parser.y"
+//#line 192 "parser.y"
 {
         Id id = new Id(val_peek(2).sval);
         ArrayList<Expression> p = (ArrayList)val_peek(0).obj;
@@ -755,7 +754,7 @@ case 33:
       }
 break;
 case 34:
-//#line 200 "parser.y"
+//#line 201 "parser.y"
 {  
         Num num = new Num(val_peek(0).ival);
 
@@ -766,7 +765,7 @@ case 34:
       }
 break;
 case 35:
-//#line 210 "parser.y"
+//#line 211 "parser.y"
 {
         Num num = new Num(val_peek(2).ival);
         ArrayList<Expression> p = (ArrayList)val_peek(0).obj;
@@ -775,7 +774,7 @@ case 35:
         yyval.obj = p;
       }
 break;
-//#line 702 "Parser.java"
+//#line 701 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####

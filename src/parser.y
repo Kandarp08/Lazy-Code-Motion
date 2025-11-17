@@ -1,6 +1,7 @@
 %{
 import java.io.*;
 import java.util.*;
+
 %}
 
 %token <ival> NUM
@@ -260,7 +261,7 @@ public static void main(String args[]) throws IOException {
         System.out.println(cfg.printEdges());
 
         System.out.println("\nPrinting the Topological sorted order\n");
-        LCM lcm_imp = new LCM();
+        lcm_impl lcm_imp = new lcm_impl();
         lcm_imp.pass1(cfg, cfgObj.getTotalNodes());
     }  
 }

@@ -10,7 +10,7 @@ while (x < y) do
         y := y - x;
 
     else 
-        y := y-1;
+        y := y - x;
         x := x + 10;
 
     endif;
