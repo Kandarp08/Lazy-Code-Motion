@@ -261,7 +261,11 @@ public static void main(String args[]) throws IOException {
         System.out.println(cfg.printEdges());
 
         System.out.println("\nPrinting the Topological sorted order\n");
-        lcm_impl lcm_imp = new lcm_impl();
-        lcm_imp.pass1(cfg, cfgObj.getTotalNodes());
+        //lcm_impl lcm_imp = new lcm_impl();
+        //lcm_imp.pass1(cfg, cfgObj.getTotalNodes());
+
+        lcm_worklist lcm_imp = new lcm_worklist();
+        lcm_imp.init(cfg, cfgObj.getTotalNodes());
+        lcm_imp.apply_lcm();
     }  
 }
