@@ -258,7 +258,7 @@ public class Worklist
 
                 if (dir == 0)
                 {
-                    System.out.println("Direction is 0, adding in then out");
+                    // System.out.println("Direction is 0, adding in then out");
                     pass.computeIn(id);
                     vals_writer.write(inLabel + "," + id + "," + pass.getIn()[id] + "\n");
                     pass.computeOut(id);
@@ -267,7 +267,7 @@ public class Worklist
 
                 else
                 {
-                    System.out.println("Direction is 1, adding out then in");
+                    // System.out.println("Direction is 1, adding out then in");
                     pass.computeOut(id);
                     vals_writer.write(outLabel + "," + id + "," + pass.getOut()[id] + "\n");
                     pass.computeIn(id);
@@ -301,7 +301,13 @@ public class Worklist
             System.out.println("Error writing to log file.");
             e.printStackTrace();
         }
-
-        System.out.println("Processing order: " + visitedOrder);
+        
+        try(FileWriter order_writer = new FileWriter("lcm_worklist_order_log.txt", true)) {
+            System.out.println("Processing order: " + visitedOrder);
+            order_writer.write(visitedOrder + "\n");
+        } catch (IOException e) {
+            System.out.println("Error writing to order log file.");
+            e.printStackTrace();
+        }
     }
 }

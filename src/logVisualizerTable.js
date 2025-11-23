@@ -11,6 +11,25 @@ const columns = ['ANTin','ANTout','earliest','AVin','AVout','latest','POSTin','P
 // Keep a 2D array for the table data
 let tableData = [];
 
+async function loadProcessingOrders() {
+    const response = await fetch("lcm_worklist_order_log.txt");
+    const text = await response.text();
+
+    const lines = text.split("\n").filter(line => line.trim().length > 0);
+
+    const container = document.getElementById("pass-orders");
+    container.innerHTML = ""; // clear any previous content
+
+    lines.forEach((line, index) => {
+        const div = document.createElement("div");
+        div.innerHTML = `<strong>Pass ${index + 1}:</strong> ${line}`;
+        container.appendChild(div);
+    });
+}
+
+window.addEventListener("DOMContentLoaded", loadProcessingOrders);
+
+
 // Initialize table rows after reading 'n'
 function initializeTable(n) {
   tableBody.innerHTML = '';
