@@ -2,24 +2,20 @@ begin
 
 x := 1;
 y := 5;
-i := 1;
 
-while ((i < 5)) do
-	i := (i + 1);
+while ((x < y)) do
 
 	if (((x % 2) = 0)) then
-		t1 := (i + i);
-		w1 := t1;
-		z1 := t1;
+		y := (y - x);
+		x := (x + 1);
 
 	else
-		t1 := (i + i);
-		z2 := t1;
+		y := (y - x);
+		x := (x + 10);
 
 	endif;
-	z3 := t1;
 done;
-t2 := (x + y);
-z := t2;
+t1 := (x + y);
+z := t1;
 
 end

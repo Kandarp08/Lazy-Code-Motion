@@ -537,7 +537,7 @@ class lcm_impl
 
         System.out.println("Pass4 finished");
         try {
-                writeDataflowToCSV("dataflow_results.csv");
+                writeDataflowToCSV("lcm_variables.csv");
         } catch (Exception e) {
             e.printStackTrace();
         }

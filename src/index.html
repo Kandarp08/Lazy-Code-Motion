@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LCM Log Visualizer</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 5px 10px;
+      text-align: center;
+      min-width: 80px;
+    }
+    .highlight {
+      background-color: lightgreen;
+      transition: background-color 0.5s;
+    }
+    button {
+      margin: 10px 0;
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>LCM Log Visualizer</h1>
+  <button id="nextBtn">Next Line</button>
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>Index</th>
+        <th>ANTin</th>
+        <th>ANTout</th>
+        <th>earliest</th>
+        <th>AVin</th>
+        <th>AVout</th>
+        <th>latest</th>
+        <th>POSTin</th>
+        <th>POSTout</th>
+        <th>Usedin</th>
+        <th>Usedout</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows will be dynamically added -->
+    </tbody>
+  </table>
+
+  <script src="logVisualizerTable.js"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,6 +40,8 @@ public class lcm_worklist
     //code rewrite variables
     private HashMap<String,String> tempVarMap; //maps expression to temp variable name.
     private int newNodeID;
+
+    // private FileWriter vals_writer;
 
     public void init(CFGNode node, int totalNodes)
     {
@@ -78,6 +81,7 @@ public class lcm_worklist
             {
                 System.out.print(var + ", ");
             }
+            //  System.out.println("}");
             System.out.println("}\n");
         }
 
@@ -555,91 +559,120 @@ public class lcm_worklist
 
     public void apply_lcm()
     {
-        // PASS 1
-        ANTin = (HashSet<String>[])new HashSet[totalNodes];
-        ANTout = (HashSet<String>[])new HashSet[totalNodes];
-        Pass pass1 = new Pass1(nodes, ANTin, ANTout, use, kill, UniversalSet);
-        Worklist worklist1 = new Worklist(pass1, 1);
+        try (FileWriter vals_writer = new FileWriter("lcm_worklist_log.txt")) {
+        // try {
+            vals_writer.write(totalNodes + "\n");
+            // vals_writer.write("Pass1:ANTin,ANTout\n");
+        
+            // PASS 1
+            ANTin = (HashSet<String>[])new HashSet[totalNodes];
+            ANTout = (HashSet<String>[])new HashSet[totalNodes];
+            Pass pass1 = new Pass1(nodes, ANTin, ANTout, use, kill, UniversalSet);
+            Worklist worklist1 = new Worklist(pass1, 1, vals_writer);
 
-        worklist1.worklist_algorithm(nodes);
-        ANTin = pass1.getIn();
-        ANTout = pass1.getOut();
+            worklist1.worklist_algorithm(nodes,"ANTin","ANTout");
+            ANTin = pass1.getIn();
+            ANTout = pass1.getOut();
+            System.out.println("After Pass 1(ANT)");
+            // vals_writer.write("After Pass 1(ANT)\n");
 
-        // PASS 2
-        AVin = (HashSet<String>[])new HashSet[totalNodes];
-        AVout = (HashSet<String>[])new HashSet[totalNodes];
-        Pass pass2 = new Pass2(nodes, AVin, AVout, use, kill, UniversalSet, ANTin);
-        Worklist worklist2 = new Worklist(pass2, 0);
+            // PASS 2
+            // vals_writer.write("Pass2:AVin,AVout\n");
+            AVin = (HashSet<String>[])new HashSet[totalNodes];
+            AVout = (HashSet<String>[])new HashSet[totalNodes];
+            Pass pass2 = new Pass2(nodes, AVin, AVout, use, kill, UniversalSet, ANTin);
+            Worklist worklist2 = new Worklist(pass2, 0, vals_writer);
 
-        worklist2.worklist_algorithm(nodes);
-        AVin = pass2.getIn();
-        AVout = pass2.getOut();    
+            worklist2.worklist_algorithm(nodes,"AVin","AVout");
+            AVin = pass2.getIn();
+            AVout = pass2.getOut();    
 
-        earliest = (HashSet<String>[])new HashSet[totalNodes];
+            earliest = (HashSet<String>[])new HashSet[totalNodes];
 
-        // Compute earliest
-        for (int i = 0; i < nodes.length; ++i)
-        {
-            earliest[i] = new HashSet<String>(ANTin[i]);
-            earliest[i].removeAll(AVin[i]);
-        }
-
-        // PASS 3
-        POSTin = (HashSet<String>[])new HashSet[totalNodes];
-        POSTout = (HashSet<String>[])new HashSet[totalNodes];
-        Pass pass3 = new Pass3(nodes, POSTin, POSTout, use, kill, UniversalSet, earliest);
-        Worklist worklist3 = new Worklist(pass3, 0);
-
-        worklist3.worklist_algorithm(nodes);
-        POSTin = pass3.getIn();
-        POSTout = pass3.getOut();    
-
-        latest = (HashSet<String>[])new HashSet[totalNodes];
-
-        // Compute latest
-        for (int i = 0; i < nodes.length; ++i)
-        {    
-            HashSet<String> S_succ = new HashSet<String>(UniversalSet);
-            ArrayList<CFGNode> exits = nodes[i].getExits();
-
-            for (CFGNode succ : exits)
+            // Compute earliest
+            for (int i = 0; i < nodes.length; ++i)
             {
-                HashSet<String> temp = new HashSet<String>(earliest[succ.getId()]);
-                temp.addAll(POSTin[succ.getId()]);
-                S_succ.retainAll(temp);
+                earliest[i] = new HashSet<String>(ANTin[i]);
+                earliest[i].removeAll(AVin[i]);
+            }
+            // vals_writer.write("PassEXTRA:earliest\n");
+            //write all earliest vals to the file.
+            for (int i = 0; i < nodes.length; ++i)
+            {
+                vals_writer.write("earliest," + i + "," + earliest[i] + "\n");
             }
 
-            // latest[n] = (earliest[n] Union POSTin[n]) intersection (use[n] Union ~S_succ);
-            latest[i] = new HashSet<String>(earliest[i]);
-            latest[i].addAll(POSTin[i]);
+            // PASS 3
+            // vals_writer.write("Pass3:POSTin,POSTout\n");
+            POSTin = (HashSet<String>[])new HashSet[totalNodes];
+            POSTout = (HashSet<String>[])new HashSet[totalNodes];
+            Pass pass3 = new Pass3(nodes, POSTin, POSTout, use, kill, UniversalSet, earliest);
+            Worklist worklist3 = new Worklist(pass3, 0, vals_writer);
 
-            HashSet<String> s2 = new HashSet<String>(use[i]);
-                
-            // Calculate complement of S_succ
-            HashSet<String> S_succ_comp = new HashSet<String>(UniversalSet);
-            S_succ_comp.removeAll(S_succ);
+            worklist3.worklist_algorithm(nodes,"POSTin","POSTout");
+            POSTin = pass3.getIn();
+            POSTout = pass3.getOut();    
 
-            s2.addAll(S_succ_comp);
+            latest = (HashSet<String>[])new HashSet[totalNodes];
 
-            latest[i].retainAll(s2);
+            // Compute latest
+            for (int i = 0; i < nodes.length; ++i)
+            {    
+                HashSet<String> S_succ = new HashSet<String>(UniversalSet);
+                ArrayList<CFGNode> exits = nodes[i].getExits();
+
+                for (CFGNode succ : exits)
+                {
+                    HashSet<String> temp = new HashSet<String>(earliest[succ.getId()]);
+                    temp.addAll(POSTin[succ.getId()]);
+                    S_succ.retainAll(temp);
+                }
+
+                // latest[n] = (earliest[n] Union POSTin[n]) intersection (use[n] Union ~S_succ);
+                latest[i] = new HashSet<String>(earliest[i]);
+                latest[i].addAll(POSTin[i]);
+
+                HashSet<String> s2 = new HashSet<String>(use[i]);
+                    
+                // Calculate complement of S_succ
+                HashSet<String> S_succ_comp = new HashSet<String>(UniversalSet);
+                S_succ_comp.removeAll(S_succ);
+
+                s2.addAll(S_succ_comp);
+
+                latest[i].retainAll(s2);
+            }
+            // vals_writer.write("PassEXTRA:latest\n");
+            //write all latest vals to the file.
+            for (int i = 0; i < nodes.length; ++i)
+            {
+                vals_writer.write("latest," + i + "," + latest[i] + "\n");
+            }
+
+            // PASS 4
+            // vals_writer.write("Pass4:Usedin,Usedout\n");
+            Usedin = (HashSet<String>[])new HashSet[totalNodes];
+            Usedout = (HashSet<String>[])new HashSet[totalNodes];
+            Pass pass4 = new Pass4(nodes, Usedin, Usedout, use, kill, UniversalSet, latest);
+            Worklist worklist4 = new Worklist(pass4, 1, vals_writer);
+
+            worklist4.worklist_algorithm(nodes,"Usedin","Usedout");
+            Usedin = pass4.getIn();
+            Usedout = pass4.getOut();    
+
+            for (int i = 0; i < nodes.length; ++i)
+            {
+                System.out.println("\n" + i);
+                System.out.println("Latest: " + latest[i]);
+                System.out.println("Usedout: " + Usedout[i]);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        // PASS 4
-        Usedin = (HashSet<String>[])new HashSet[totalNodes];
-        Usedout = (HashSet<String>[])new HashSet[totalNodes];
-        Pass pass4 = new Pass4(nodes, Usedin, Usedout, use, kill, UniversalSet, latest);
-        Worklist worklist4 = new Worklist(pass4, 1);
-
-        worklist4.worklist_algorithm(nodes);
-        Usedin = pass4.getIn();
-        Usedout = pass4.getOut();    
-
-        for (int i = 0; i < nodes.length; ++i)
-        {
-            System.out.println("\n" + i);
-            System.out.println("Latest: " + latest[i]);
-            System.out.println("Usedout: " + Usedout[i]);
-        }
+        //writing to CSV
+        System.out.println("Writing dataflow analysis results to CSV...");
+        writeDataflowToCSV("lcm_worklist_variables.csv");
 
         code_rewrite();
     }

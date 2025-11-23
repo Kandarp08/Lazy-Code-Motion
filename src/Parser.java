@@ -16,12 +16,11 @@
 
 
 
-//#line 1 "parser.y"
-
+//#line 2 "parser.y"
 import java.io.*;
 import java.util.*;
 
-//#line 22 "Parser.java"
+//#line 21 "Parser.java"
 
 
 
@@ -373,8 +372,7 @@ final static String yyrule[] = {
 "args : NUM ',' args",
 };
 
-//#line 219 "parser.y"
-
+//#line 220 "parser.y"
 
 private Yylex lexer;
 public Seq program;
@@ -418,16 +416,16 @@ public static void main(String args[]) throws IOException {
         System.out.println("\nEDGES:\n");
         System.out.println(cfg.printEdges());
 
-        System.out.println("\nPrinting the Topological sorted order\n");
+        lcm_worklist lcm_worklist_imp = new lcm_worklist();
+        lcm_worklist_imp.init(cfg, cfgObj.getTotalNodes());
+        lcm_worklist_imp.apply_lcm();
+
+        //System.out.println("\nPrinting the Topological sorted order\n");
         //lcm_impl lcm_imp = new lcm_impl();
         //lcm_imp.pass1(cfg, cfgObj.getTotalNodes());
-
-        lcm_worklist lcm_imp = new lcm_worklist();
-        lcm_imp.init(cfg, cfgObj.getTotalNodes());
-        lcm_imp.apply_lcm();
     }  
 }
-//#line 359 "Parser.java"
+//#line 357 "Parser.java"
 //###############################################################
 // method: yylexdebug : check lexer state
 //###############################################################
@@ -780,7 +778,7 @@ case 35:
         yyval.obj = p;
       }
 break;
-//#line 707 "Parser.java"
+//#line 705 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####

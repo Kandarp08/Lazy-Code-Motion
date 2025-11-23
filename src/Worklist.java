@@ -1,7 +1,14 @@
+import java.io.FileWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
+import java.io.BufferedWriter;
+// import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 abstract class Pass
 {
@@ -211,13 +218,15 @@ public class Worklist
 {
     private Pass pass;
     private int dir;
+    private FileWriter vals_writer;
 
     // dir = 0 => forward analysis
     // dir = 1 => backward analysis
-    public Worklist(Pass pass, int dir)
+    public Worklist(Pass pass, int dir, FileWriter vals_writer)
     {
         this.pass = pass;
         this.dir = dir;
+        this.vals_writer = vals_writer;
     }
 
     private boolean deepEquals(HashSet<String> a, HashSet<String> b) 
@@ -225,56 +234,74 @@ public class Worklist
         return a.equals(b);
     }
 
-    public void worklist_algorithm(CFGNode[] nodes)
+    public void worklist_algorithm(CFGNode[] nodes, String inLabel, String outLabel)
     {
         Deque<CFGNode> worklist = new ArrayDeque<>();
 
         for (int i = 0; i < nodes.length; ++i)
             worklist.add(nodes[i]);
 
-        while (!worklist.isEmpty())
-        {
-            CFGNode node = worklist.remove();
-            int id = node.getId();
+        List<Integer> visitedOrder = new ArrayList<>();
 
-            // copy only the old sets for this node
-            HashSet<String> oldIn  = new HashSet<>(pass.getIn()[id]);
-            HashSet<String> oldOut = new HashSet<>(pass.getOut()[id]);
-
-            if (dir == 0)
+        // try (FileWriter vals_writer = new FileWriter("lcm_worklist_log.txt")) {
+        try {
+            while (!worklist.isEmpty())
             {
-                pass.computeIn(id);
-                pass.computeOut(id);
-            }
+                CFGNode node = worklist.remove();
+                int id = node.getId();
 
-            else
-            {
-                pass.computeOut(id);
-                pass.computeIn(id);
-            }
+                visitedOrder.add(id);
 
-            HashSet<String> newIn  = pass.getIn()[id];
-            HashSet<String> newOut = pass.getOut()[id];
+                // copy only the old sets for this node
+                HashSet<String> oldIn  = new HashSet<>(pass.getIn()[id]);
+                HashSet<String> oldOut = new HashSet<>(pass.getOut()[id]);
 
-            boolean inChanged  = !deepEquals(newIn, oldIn);
-            boolean outChanged = !deepEquals(newOut, oldOut);
-
-            if (inChanged || outChanged)
-            {
-                // forward analysis => push succ into worklist
-                if (dir == 0) 
+                if (dir == 0)
                 {
-                    for (CFGNode succ : node.getExits())
-                        worklist.add(succ);
-                } 
-                
-                // backward analysis => push pred into worklist
-                else 
+                    System.out.println("Direction is 0, adding in then out");
+                    pass.computeIn(id);
+                    vals_writer.write(inLabel + "," + id + "," + pass.getIn()[id] + "\n");
+                    pass.computeOut(id);
+                    vals_writer.write(outLabel + "," + id + "," + pass.getOut()[id] + "\n");
+                }
+
+                else
                 {
-                    for (CFGNode pred : node.getEntries())
-                        worklist.add(pred);
+                    System.out.println("Direction is 1, adding out then in");
+                    pass.computeOut(id);
+                    vals_writer.write(outLabel + "," + id + "," + pass.getOut()[id] + "\n");
+                    pass.computeIn(id);
+                    vals_writer.write(inLabel + "," + id + "," + pass.getIn()[id] + "\n");
+                }
+
+                HashSet<String> newIn  = pass.getIn()[id];
+                HashSet<String> newOut = pass.getOut()[id];
+
+                boolean inChanged  = !deepEquals(newIn, oldIn);
+                boolean outChanged = !deepEquals(newOut, oldOut);
+
+                if (inChanged || outChanged)
+                {
+                    // forward analysis => push succ into worklist
+                    if (dir == 0) 
+                    {
+                        for (CFGNode succ : node.getExits())
+                            worklist.add(succ);
+                    } 
+                    
+                    // backward analysis => push pred into worklist
+                    else 
+                    {
+                        for (CFGNode pred : node.getEntries())
+                            worklist.add(pred);
+                    }
                 }
             }
+        } catch(Exception e) {
+            System.out.println("Error writing to log file.");
+            e.printStackTrace();
         }
+
+        System.out.println("Processing order: " + visitedOrder);
     }
 }
